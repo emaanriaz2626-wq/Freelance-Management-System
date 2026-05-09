@@ -427,7 +427,7 @@ class FreelanceManagementSystem:
         # Display the detailed report
         print("\nDetailed Project Report:")
         pd.set_option('display.float_format', '{:.2f}'.format)
-        print(df.to_string(index=False))
+        print(df.to_string())
 
         # Calculate summary statistics
         print("\n" + "-" * 30)
