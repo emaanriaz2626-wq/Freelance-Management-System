@@ -11,7 +11,6 @@ class Client:
     def set_name(self, name): self._name = name
     def get_contact(self): return self._contact
     def set_contact(self, contact): self._contact = contact
-
     def get_payment_terms(self): return self._payment_terms
     def set_payment_terms(self, terms): self._payment_terms = terms
 
@@ -30,14 +29,12 @@ class Client:
         return cls(data["name"], data["contact"], data["payment_terms"])
 
 class Project:
-    def __init__(self, title, deadline, rate, is_hourly=False):
+    def __init__(self, title, deadline, rate):
         self._title = title
         self._deadline = deadline
         self._rate = rate
-        self._is_hourly = is_hourly
-        self._status = "Not Started"
-        self._hours_worked = 0.0
-        self._expenses = 0.0
+        self.status = "Not Started"
+        self.expenses = 0.0
 
     def get_title(self): return self._title
     def set_title(self, title): self._title = title
@@ -45,28 +42,19 @@ class Project:
     def set_deadline(self, deadline): self._deadline = deadline
     def get_rate(self): return self._rate
     def set_rate(self, rate): self._rate = rate
-    def get_status(self): return self._status
-    def set_status(self, status): self._status = status
-    def get_hours_worked(self): return self._hours_worked
-    def set_hours_worked(self, hours): self._hours_worked = hours
-    def get_expenses(self): return self._expenses
-    def set_expenses(self, expenses): self._expenses = expenses
-    def is_hourly(self): return self._is_hourly
 
     def display_info(self):
-        return (f"Project: {self._title} | Deadline: {self._deadline} | Rate: ${self._rate}{'/hr' if self._is_hourly else ' fixed'} | "
-                f"Status: {self._status} | Hours: {self._hours_worked} | Expenses: ${self._expenses}")
+        return (f"Project: {self._title} | Deadline: {self._deadline} | Rate: ${self._rate} | "
+                f"Status: {self.status} | Expenses: ${self.expenses}")
 
     def calculate_gross_earnings(self):
-        if self._is_hourly:
-            return self._rate * self._hours_worked
         return self._rate
 
     def calculate_estimated_tax(self, tax_rate=0.20):
         return self.calculate_gross_earnings() * tax_rate
 
     def calculate_net_income(self, tax_rate=0.20):
-        return self.calculate_gross_earnings() - self.calculate_estimated_tax(tax_rate) - self._expenses
+        return self.calculate_gross_earnings() - self.calculate_estimated_tax(tax_rate) - self.expenses
 
     def calculate_profit_margin(self, tax_rate=0.20):       # profit margin is the ratio of the net income to the gross earnings in percentage form.
         gross = self.calculate_gross_earnings()
@@ -78,18 +66,15 @@ class Project:
             "title": self._title,
             "deadline": self._deadline,
             "rate": self._rate,
-            "is_hourly": self._is_hourly,
-            "status": self._status,
-            "hours_worked": self._hours_worked,
-            "expenses": self._expenses
+            "status": self.status,
+            "expenses": self.expenses
         }
 
     @classmethod
     def from_dict(cls, data):
-        p = cls(data["title"], data["deadline"], data["rate"], data.get("is_hourly", False))
-        p.set_status(data.get("status", "Not Started"))
-        p.set_hours_worked(data.get("hours_worked", 0.0))
-        p.set_expenses(data.get("expenses", 0.0))
+        p = cls(data["title"], data["deadline"], data["rate"])
+        p.status=data.get("status", "Not Started")
+        p.expenses=data.get("expenses", 0.0)
         return p
 
 class Invoice:
@@ -256,7 +241,7 @@ class FreelanceManagementSystem:
             print("2. View Projects")
             print("3. Update Project")
             print("4. Delete Project")
-            print("5. Log Hours / Expenses")
+            print("5. Log Expenses")
             print("6. Back to Main Menu")
             
             choice = input("Enter choice: ")
@@ -265,8 +250,7 @@ class FreelanceManagementSystem:
                 deadline = input("Enter deadline (YYYY-MM-DD): ")
                 try:
                     rate = float(input("Enter rate (number): "))
-                    is_hourly = input("Is this an hourly rate? (y/n): ").lower().startswith('y')
-                    self.projects.append(Project(title, deadline, rate, is_hourly))
+                    self.projects.append(Project(title, deadline, rate))
                     print("Project added successfully.")
                 except ValueError:
                     print("Invalid rate. Project not added.")
@@ -283,7 +267,7 @@ class FreelanceManagementSystem:
                         p.set_deadline(input(f"Enter new deadline ({p.get_deadline()}): ") or p.get_deadline())
                         rate_input = input(f"Enter new rate ({p.get_rate()}): ")
                         if rate_input: p.set_rate(float(rate_input))
-                        p.set_status(input(f"Enter new status ({p.get_status()}): ") or p.get_status())
+                        p.status=input(f"Enter new status ({p.status}): ") or p.status
                         print("Project updated.")
                     else:
                         print("Invalid number.")
@@ -308,10 +292,8 @@ class FreelanceManagementSystem:
                     idx = int(input("Enter project number to log details for: ")) - 1
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
-                        hours_input = input(f"Enter hours worked to add (current: {p.get_hours_worked()}): ")
-                        if hours_input: p.set_hours_worked(p.get_hours_worked() + float(hours_input))
-                        expenses_input = input(f"Enter expenses to add (current: {p.get_expenses()}): ")
-                        if expenses_input: p.set_expenses(p.get_expenses() + float(expenses_input))
+                        expenses_input = input(f"Enter expenses to add (current: {p.expenses}): ")
+                        p.expenses += float(expenses_input)
                         print("Project details logged.")
                     else:
                         print("Invalid number.")
@@ -437,13 +419,13 @@ class FreelanceManagementSystem:
             print(f"\nProject: {p.get_title()}")
             print(f"  Gross Earnings: ${gross:.2f}")
             print(f"  Estimated Tax:  ${tax:.2f}")
-            print(f"  Expenses:       ${p.get_expenses():.2f}")
+            print(f"  Expenses:       ${p.expenses:.2f}")
             print(f"  Net Income:     ${net:.2f}")
             print(f"  Profit Margin:  {margin:.2f}%")
 
             total_gross += gross
             total_tax += tax
-            total_expenses += p.get_expenses()
+            total_expenses += p.expenses
             total_net += net
 
         print("\n" + "-"*30)

@@ -1,0 +1,13 @@
+{
+    "clients": [],
+    "projects": [
+        {
+            "title": "Web design",
+            "deadline": "2026/05/10",
+            "rate": 999.0,
+            "status": "Not Started",
+            "expenses": 0.0
+        }
+    ],
+    "invoices": []
+}
