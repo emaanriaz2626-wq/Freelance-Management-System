@@ -1,130 +1,11 @@
 import os
 import json
 import pandas as pd
-import matplotlib.pyplot as plt 
-import numpy as np 
 
-class Client:
-    def __init__(self, name, contact, payment_terms):
-        self._name = name
-        self._contact = contact
-        self._payment_terms = payment_terms
-
-    def get_name(self): return self._name
-    def set_name(self, name): self._name = name
-    def get_contact(self): return self._contact
-    def set_contact(self, contact): self._contact = contact
-    def get_payment_terms(self): return self._payment_terms
-    def set_payment_terms(self, terms): self._payment_terms = terms
-
-    def display_info(self):
-        return f"Client Name: {self._name} | Contact: {self._contact} | Payment Terms: {self._payment_terms}"
-
-    def to_dict(self):
-        return {
-            "name": self._name,
-            "contact": self._contact,
-            "payment_terms": self._payment_terms
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(data["name"], data["contact"], data["payment_terms"])
-
-class Project:
-    def __init__(self, title, deadline, rate):
-        self._title = title
-        self._deadline = deadline
-        self._rate = rate
-        self.status = "Not Started"
-        self.expenses = 0.0
-
-    def get_title(self): return self._title
-    def set_title(self, title): self._title = title
-    def get_deadline(self): return self._deadline
-    def set_deadline(self, deadline): self._deadline = deadline
-    def get_rate(self): return self._rate
-    def set_rate(self, rate): self._rate = rate
-
-    def display_info(self):
-        return (f"Project: {self._title} | Deadline: {self._deadline} | Rate: ${self._rate} | "
-                f"Status: {self.status} | Expenses: ${self.expenses}")
-
-    def calculate_gross_earnings(self):
-        return self._rate
-
-    def calculate_estimated_tax(self, tax_rate=0.20):
-        return self.calculate_gross_earnings() * tax_rate
-
-    def calculate_net_income(self, tax_rate=0.20):
-        return self.calculate_gross_earnings() - self.calculate_estimated_tax(tax_rate) - self.expenses
-
-    def calculate_profit_margin(self, tax_rate=0.20):       # profit margin is the ratio of the net income to the gross earnings in percentage form.
-        gross = self.calculate_gross_earnings()
-        if gross == 0: return 0.0   # condition to prevent a zero division error.
-        return (self.calculate_net_income(tax_rate) / gross) * 100
-
-    def to_dict(self):
-        return {
-            "title": self._title,
-            "deadline": self._deadline,
-            "rate": self._rate,
-            "status": self.status,
-            "expenses": self.expenses
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        p = cls(data["title"], data["deadline"], data["rate"])
-        p.status=data.get("status", "Not Started")
-        p.expenses=data.get("expenses", 0.0)
-        return p
-
-class Invoice:
-    def __init__(self, client, project, due_date):
-        self._client = client
-        self._project = project
-        self._due_date = due_date
-        self._items = []
-
-    def add_item(self, description, amount):
-        self._items.append({"description": description, "amount": amount})
-        
-    def clear_items(self):
-        self._items = []
-
-    def get_client(self): return self._client
-    def get_project(self): return self._project
-    def get_due_date(self): return self._due_date
-    def set_due_date(self, due_date): self._due_date = due_date
-    def get_items(self): return self._items
-
-    def get_totals(self):
-        return sum(item["amount"] for item in self._items)
-
-    def display_info(self):
-        info = f"Invoice for {self._client.get_name()} (Project: {self._project.get_title()}) - Due: {self._due_date}\n"
-        for idx, item in enumerate(self._items, 1):
-            info += f"  {idx}. {item['description']}: ${item['amount']:.2f}\n"
-        info += f"  Total: ${self.get_totals():.2f}"
-        return info
-
-    def to_dict(self, clients_list, projects_list):
-        return {
-            "client_idx": clients_list.index(self._client) if self._client in clients_list else -1,
-            "project_idx": projects_list.index(self._project) if self._project in projects_list else -1,
-            "due_date": self._due_date,
-            "items": self._items
-        }
-
-    @classmethod
-    def from_dict(cls, data, clients_list, projects_list):
-        client = clients_list[data["client_idx"]] if 0 <= data["client_idx"] < len(clients_list) else None
-        project = projects_list[data["project_idx"]] if 0 <= data["project_idx"] < len(projects_list) else None
-        inv = cls(client, project, data["due_date"])
-        inv._items = data.get("items", [])
-        return inv
-
+from client import Client
+from project import Project
+from invoice import Invoice
+from graphs import GraphManager
 
 class FreelanceManagementSystem:
     def __init__(self):
@@ -175,7 +56,7 @@ class FreelanceManagementSystem:
             elif choice == '4':
                 self.financial_reports()
             elif choice == '5':
-                self.plot_project_status()
+                GraphManager.plot_project_status(self.projects)
             elif choice == '6':
                 self.save_data()
                 print("Data saved. Exiting System.")
@@ -307,7 +188,7 @@ class FreelanceManagementSystem:
                 except ValueError:
                     print("Please enter valid numbers.")
             elif choice == '6':
-                self.plot_financial_breakdown()
+                GraphManager.plot_financial_breakdown(self.projects)
             elif choice == '7':
                 break
             else:
@@ -456,65 +337,3 @@ class FreelanceManagementSystem:
         stats_df = df[["Gross Earnings", "Estimated Tax", "Expenses", "Net Income", "Profit Margin (%)"]].describe()
         print(stats_df.loc[['mean', 'min', 'max']])
         print("-" * 30)
-
-    def plot_project_status(self):
-        if not self.projects:
-            print("No projects to plot.")
-            return
-            
-        # Count the occurrences of each project status
-        status_counts = {}
-        for p in self.projects:
-            status = p.status
-            if status in status_counts:
-                status_counts[status] += 1
-            else:
-                status_counts[status] = 1
-            
-        labels = list(status_counts.keys())
-        sizes = list(status_counts.values())
-        
-        # Generate the pie chart using matplotlib
-        plt.figure(figsize=(8, 6))
-        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
-        plt.title('Project Status Distribution')
-        plt.show()
-
-    def plot_financial_breakdown(self):
-        if not self.projects:
-            print("No projects to plot.")
-            return
-
-        # Prepare the data
-        titles = [p.get_title() for p in self.projects]
-        gross_earnings = [p.calculate_gross_earnings() for p in self.projects]
-        expenses = [p.expenses for p in self.projects]
-        net_incomes = [p.calculate_net_income() for p in self.projects]
-
-        # Set up the bar locations on the X-axis
-        x = np.arange(len(titles))  # [0, 1, 2, ...] based on number of projects
-        width = 0.25  # The width of each individual bar
-
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        # Plotting the three groups of bars. We shift the X coordinates slightly 
-        # so they sit side-by-side instead of overlapping.
-        ax.bar(x - width, gross_earnings, width, label='Gross Earnings', color='skyblue')
-        ax.bar(x, expenses, width, label='Expenses', color='salmon')
-        ax.bar(x + width, net_incomes, width, label='Net Income', color='lightgreen')
-
-        # Add labels, title, and adjust X-axis ticks to show project names
-        ax.set_ylabel('Amount ($)')
-        ax.set_title('Project Financial Breakdown')
-        ax.set_xticks(x)
-        # Rotate long project titles by 45 degrees so they don't overlap
-        ax.set_xticklabels(titles, rotation=45, ha="right")  
-        ax.legend()
-
-        # tight_layout prevents the rotated labels from bg cut off at the bottom of the window
-        fig.tight_layout()
-        plt.show()
-
-if __name__ == "__main__":
-    system = FreelanceManagementSystem()
-    system.start()
