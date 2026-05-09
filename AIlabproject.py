@@ -1,6 +1,8 @@
 import os  #WHY///
 import json
 import pandas as pd
+import matplotlib.pyplot as plt 
+import numpy as np 
 
 class Client:
     def __init__(self, name, contact, payment_terms):
@@ -159,9 +161,10 @@ class FreelanceManagementSystem:
             print("2. Manage Projects")
             print("3. Manage Invoices")
             print("4. Financial Reports")
-            print("5. Exit")
+            print("5. Project Status Chart")
+            print("6. Exit")
             
-            choice = input("Enter choice (1-5): ")
+            choice = input("Enter choice (1-6): ")
             
             if choice == '1':
                 self.manage_clients()
@@ -172,6 +175,8 @@ class FreelanceManagementSystem:
             elif choice == '4':
                 self.financial_reports()
             elif choice == '5':
+                self.plot_project_status()
+            elif choice == '6':
                 self.save_data()
                 print("Data saved. Exiting System.")
                 break
@@ -243,7 +248,8 @@ class FreelanceManagementSystem:
             print("3. Update Project")
             print("4. Delete Project")
             print("5. Log Expenses")
-            print("6. Back to Main Menu")
+            print("6. Project Financial Breakdown")
+            print("7. Back to Main Menu")
             
             choice = input("Enter choice: ")
             if choice == '1':
@@ -301,6 +307,8 @@ class FreelanceManagementSystem:
                 except ValueError:
                     print("Please enter valid numbers.")
             elif choice == '6':
+                self.plot_financial_breakdown()
+            elif choice == '7':
                 break
             else:
                 print("Invalid choice.")
@@ -312,7 +320,6 @@ class FreelanceManagementSystem:
         for i, p in enumerate(self.projects, 1):
             print(f"{i}. {p.display_info()}")
 
-    # --- Invoice Management ---
     def manage_invoices(self):
         while True:
             print("\n--- Invoice Management ---")
@@ -450,6 +457,63 @@ class FreelanceManagementSystem:
         print(stats_df.loc[['mean', 'min', 'max']])
         print("-" * 30)
 
+    def plot_project_status(self):
+        if not self.projects:
+            print("No projects to plot.")
+            return
+            
+        # Count the occurrences of each project status
+        status_counts = {}
+        for p in self.projects:
+            status = p.status
+            if status in status_counts:
+                status_counts[status] += 1
+            else:
+                status_counts[status] = 1
+            
+        labels = list(status_counts.keys())
+        sizes = list(status_counts.values())
+        
+        # Generate the pie chart using matplotlib
+        plt.figure(figsize=(8, 6))
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
+        plt.title('Project Status Distribution')
+        plt.show()
+
+    def plot_financial_breakdown(self):
+        if not self.projects:
+            print("No projects to plot.")
+            return
+
+        # Prepare the data
+        titles = [p.get_title() for p in self.projects]
+        gross_earnings = [p.calculate_gross_earnings() for p in self.projects]
+        expenses = [p.expenses for p in self.projects]
+        net_incomes = [p.calculate_net_income() for p in self.projects]
+
+        # Set up the bar locations on the X-axis
+        x = np.arange(len(titles))  # [0, 1, 2, ...] based on number of projects
+        width = 0.25  # The width of each individual bar
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Plotting the three groups of bars. We shift the X coordinates slightly 
+        # so they sit side-by-side instead of overlapping.
+        ax.bar(x - width, gross_earnings, width, label='Gross Earnings', color='skyblue')
+        ax.bar(x, expenses, width, label='Expenses', color='salmon')
+        ax.bar(x + width, net_incomes, width, label='Net Income', color='lightgreen')
+
+        # Add labels, title, and adjust X-axis ticks to show project names
+        ax.set_ylabel('Amount ($)')
+        ax.set_title('Project Financial Breakdown')
+        ax.set_xticks(x)
+        # Rotate long project titles by 45 degrees so they don't overlap
+        ax.set_xticklabels(titles, rotation=45, ha="right")  
+        ax.legend()
+
+        # tight_layout prevents the rotated labels from being cut off at the bottom of the window
+        fig.tight_layout()
+        plt.show()
 
 if __name__ == "__main__":
     system = FreelanceManagementSystem()
