@@ -1,5 +1,6 @@
 import os  #WHY///
 import json
+import pandas as pd
 
 class Client:
     def __init__(self, name, contact, payment_terms):
@@ -405,38 +406,49 @@ class FreelanceManagementSystem:
             print("No projects to report on.")
             return
 
-        total_gross = 0.0
-        total_tax = 0.0
-        total_expenses = 0.0
-        total_net = 0.0
-
+        data = []
         for p in self.projects:
             gross = p.calculate_gross_earnings()
             tax = p.calculate_estimated_tax()
             net = p.calculate_net_income()
             margin = p.calculate_profit_margin()
             
-            print(f"\nProject: {p.get_title()}")
-            print(f"  Gross Earnings: ${gross:.2f}")
-            print(f"  Estimated Tax:  ${tax:.2f}")
-            print(f"  Expenses:       ${p.expenses:.2f}")
-            print(f"  Net Income:     ${net:.2f}")
-            print(f"  Profit Margin:  {margin:.2f}%")
+            data.append({
+                "Project Title": p.get_title(),
+                "Gross Earnings": gross,
+                "Estimated Tax": tax,
+                "Expenses": p.expenses,
+                "Net Income": net,
+                "Profit Margin (%)": margin
+            })
 
-            total_gross += gross
-            total_tax += tax
-            total_expenses += p.expenses
-            total_net += net
+        df = pd.DataFrame(data)
 
-        print("\n" + "-"*30)
+        # Display the detailed report
+        print("\nDetailed Project Report:")
+        pd.set_option('display.float_format', '{:.2f}'.format)
+        print(df.to_string(index=False))
+
+        # Calculate summary statistics
+        print("\n" + "-" * 30)
         print("OVERALL SUMMARY")
+        total_gross = df["Gross Earnings"].sum()
+        total_tax = df["Estimated Tax"].sum()
+        total_expenses = df["Expenses"].sum()
+        total_net = df["Net Income"].sum()
+
         print(f"Total Gross Earnings: ${total_gross:.2f}")
         print(f"Total Estimated Tax:  ${total_tax:.2f}")
         print(f"Total Expenses:       ${total_expenses:.2f}")
         print(f"Total Net Income:     ${total_net:.2f}")
         overall_margin = (total_net / total_gross * 100) if total_gross > 0 else 0
         print(f"Overall Profit Margin: {overall_margin:.2f}%")
-        print("-"*30)
+
+        # Additionally, provide summary statistics using pandas describe()
+        print("\nSummary Statistics (mean, min, max):")
+        stats_df = df[["Gross Earnings", "Estimated Tax", "Expenses", "Net Income", "Profit Margin (%)"]].describe()
+        print(stats_df.loc[['mean', 'min', 'max']])
+        print("-" * 30)
 
 
 if __name__ == "__main__":
