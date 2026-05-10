@@ -20,10 +20,11 @@ class Project:
                 f"Status: {self.status} | Hours Worked: {self.hours_worked} |Expenses: ${self.expenses}")
 
     def calculate_gross_earnings(self):
-        if self.rate_type == "fixed":
+        if self.rate_type in ["fixed", "f"]:
             return self._rate
-        elif self.rate_type == "hourly":
+        elif self.rate_type in ["hourly", "h"]:
             return self.hours_worked * self._rate
+        return 0.0
 
     def calculate_estimated_tax(self, tax_rate=0.20):
         return self.calculate_gross_earnings() * tax_rate

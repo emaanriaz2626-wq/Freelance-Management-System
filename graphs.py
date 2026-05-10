@@ -24,6 +24,7 @@ class GraphManager:
         plt.figure(figsize=(8, 6))
         plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
         plt.title('Project Status Distribution')
+        print("\n[NOTE: Please close the chart window to continue...]")
         plt.show()
 
     @staticmethod
@@ -60,4 +61,5 @@ class GraphManager:
 
         # tight_layout prevents the rotated labels from bg cut off at the bottom of the window
         fig.tight_layout()
+        print("\n[NOTE: Please close the chart window to continue...]")
         plt.show()
