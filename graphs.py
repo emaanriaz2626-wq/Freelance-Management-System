@@ -24,6 +24,7 @@ class GraphManager:
         plt.figure(figsize=(8, 6))
         plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
         plt.title('Project Status Distribution')
+        print("\n[NOTE: Please close the chart window to continue...]")
         plt.show()
 
     @staticmethod
@@ -59,4 +60,5 @@ class GraphManager:
 
         #prevent label cutoff
         fig.tight_layout()
+        print("\n[NOTE: Please close the chart window to continue...]")
         plt.show()
