@@ -6,6 +6,7 @@ from client import Client
 from project import Project
 from invoice import Invoice
 from graphs import GraphManager
+from currency import CurrencyScraper
 
 class FreelanceManagementSystem:
     def __init__(self):
@@ -78,7 +79,8 @@ class FreelanceManagementSystem:
                 name = input("Enter client name: ")
                 contact = input("Enter contact info: ")
                 terms = input("Enter payment terms: ")
-                self.clients.append(Client(name, contact, terms))
+                currency = input("Enter currency name (e.g., US Dollar, Euro) [US Dollar]: ").strip().title() or "US Dollar"
+                self.clients.append(Client(name, contact, terms, currency))
                 print("Client added successfully.")
             elif choice == '2':
                 self.view_clients()
@@ -92,6 +94,7 @@ class FreelanceManagementSystem:
                         c.set_name(input(f"Enter new name ({c.get_name()}): ") or c.get_name())
                         c.set_contact(input(f"Enter new contact ({c.get_contact()}): ") or c.get_contact())
                         c.set_payment_terms(input(f"Enter new terms ({c.get_payment_terms()}): ") or c.get_payment_terms())
+                        c.set_currency(input(f"Enter new currency name ({c.currency}): ").strip().title() or c.currency)
                         print("Client updated.")
                     else:
                         print("Invalid number.")
@@ -103,8 +106,11 @@ class FreelanceManagementSystem:
                 try:
                     idx = int(input("Enter client number to delete: ")) - 1
                     if 0 <= idx < len(self.clients):
+                        client_to_delete = self.clients[idx]
+                        # Remove invoices associated with this client
+                        self.invoices = [inv for inv in self.invoices if inv.get_client() != client_to_delete]
                         del self.clients[idx]
-                        print("Client deleted.")
+                        print("Client and associated invoices deleted.")
                     else:
                         print("Invalid number.")
                 except ValueError:
@@ -128,7 +134,7 @@ class FreelanceManagementSystem:
             print("2. View Projects")
             print("3. Update Project")
             print("4. Delete Project")
-            print("5. Log Expenses")
+            print("5. Log Expenses/Hours Worked")
             print("6. Project Financial Breakdown")
             print("7. Back to Main Menu")
             
@@ -138,7 +144,11 @@ class FreelanceManagementSystem:
                 deadline = input("Enter deadline (YYYY-MM-DD): ")
                 try:
                     rate = float(input("Enter rate (number): "))
-                    self.projects.append(Project(title, deadline, rate))
+                    rate_type = input("Enter rate type (f=fixed / h=hourly): ").lower()
+                    if rate_type not in ["f", "h"]:
+                        print("Invalid rate type. Project not added.")
+                        continue
+                    self.projects.append(Project(title, deadline, rate, rate_type))
                     print("Project added successfully.")
                 except ValueError:
                     print("Invalid rate. Project not added.")
@@ -156,6 +166,11 @@ class FreelanceManagementSystem:
                         rate_input = input(f"Enter new rate ({p.get_rate()}): ")
                         if rate_input: p.set_rate(float(rate_input))
                         p.status=input(f"Enter new status ({p.status}): ") or p.status
+                        
+                        hw_input = input(f"Enter new hours worked ({p.hours_worked}): ")
+                        if hw_input: p.hours_worked = float(hw_input)
+                        
+                        p.rate_type = input(f"Enter new rate type ({p.rate_type}): ") or p.rate_type
                         print("Project updated.")
                     else:
                         print("Invalid number.")
@@ -167,8 +182,11 @@ class FreelanceManagementSystem:
                 try:
                     idx = int(input("Enter project number to delete: ")) - 1
                     if 0 <= idx < len(self.projects):
+                        project_to_delete = self.projects[idx]
+                        # Remove invoices associated with this project
+                        self.invoices = [inv for inv in self.invoices if inv.get_project() != project_to_delete]
                         del self.projects[idx]
-                        print("Project deleted.")
+                        print("Project and associated invoices deleted.")
                     else:
                         print("Invalid number.")
                 except ValueError:
@@ -181,7 +199,11 @@ class FreelanceManagementSystem:
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
                         expenses_input = input(f"Enter expenses to add (current: {p.expenses}): ")
-                        p.expenses += float(expenses_input)
+                        if expenses_input: p.expenses += float(expenses_input)
+                        
+                        hours_input = input(f"Enter hours worked to add (current: {p.hours_worked}): ")
+                        if hours_input: p.hours_worked += float(hours_input)
+                        
                         print("Project details logged.")
                     else:
                         print("Invalid number.")
@@ -207,8 +229,9 @@ class FreelanceManagementSystem:
             print("1. Create Invoice")
             print("2. View Invoices")
             print("3. Update Invoice Items")
-            print("4. Delete Invoice")
-            print("5. Back to Main Menu")
+            print("4. View Invoice in Client Currency")
+            print("5. Delete Invoice")
+            print("6. Back to Main Menu")
 
             choice = input("Enter choice: ")
             if choice == '1':
@@ -265,6 +288,32 @@ class FreelanceManagementSystem:
                 self.view_invoices()
                 if not self.invoices: continue
                 try:
+                    idx = int(input("Enter invoice number to view in client's currency: ")) - 1
+                    if 0 <= idx < len(self.invoices):
+                        inv = self.invoices[idx]
+                        client = inv.get_client()
+                        target_currency = client.currency
+                        total_usd = inv.get_totals()
+                        
+                        if target_currency.lower() in ["usd", "us dollar", "1.00 usd"]:
+                            print(f"Client's currency is already US Dollar. Total: ${total_usd:.2f}")
+                        else:
+                            print(f"Fetching live exchange rate for US Dollar to {target_currency}...")
+                            rate = CurrencyScraper.get_exchange_rate("US Dollar", target_currency)
+                            if rate:
+                                total_converted = total_usd * rate
+                                print(f"Exchange Rate: 1 USD = {rate} {target_currency}")
+                                print(f"Invoice Total ({target_currency}): {total_converted:.2f} {target_currency}")
+                            else:
+                                print("Failed to fetch exchange rate.")
+                    else:
+                        print("Invalid number.")
+                except ValueError:
+                    print("Please enter a valid number.")
+            elif choice == '5':
+                self.view_invoices()
+                if not self.invoices: continue
+                try:
                     idx = int(input("Enter invoice number to delete: ")) - 1
                     if 0 <= idx < len(self.invoices):
                         del self.invoices[idx]
@@ -273,7 +322,7 @@ class FreelanceManagementSystem:
                         print("Invalid number.")
                 except ValueError:
                     print("Please enter a valid number.")
-            elif choice == '5':
+            elif choice == '6':
                 break
             else:
                 print("Invalid choice.")
