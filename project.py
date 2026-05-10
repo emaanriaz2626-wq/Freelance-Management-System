@@ -2,7 +2,7 @@ class Project:
     def __init__(self, title, deadline, rate, rate_type):
         self._title = title
         self._deadline = deadline
-        self.rate_type = rate_type # can be fixed or hourly
+        self.rate_type = rate_type #fixed or hourly
         self._rate = rate
         self.status = "Not Started"
         self.expenses = 0.0
@@ -31,9 +31,9 @@ class Project:
     def calculate_net_income(self, tax_rate=0.20):
         return self.calculate_gross_earnings() - self.calculate_estimated_tax(tax_rate) - self.expenses
 
-    def calculate_profit_margin(self, tax_rate=0.20):       # profit margin is the ratio of the net income to the gross earnings in percentage form.
+    def calculate_profit_margin(self, tax_rate=0.20):       #calculate margin
         gross = self.calculate_gross_earnings()
-        if gross == 0: return 0.0   # condition to prevent a zero division error.
+        if gross == 0: return 0.0   #prevent zero division
         return (self.calculate_net_income(tax_rate) / gross) * 100
 
     def to_dict(self):

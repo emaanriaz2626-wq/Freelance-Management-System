@@ -17,6 +17,7 @@ class FreelanceManagementSystem:
         self.load_data()
 
     def load_data(self):
+        #check file exists
         if not os.path.exists(self.data_file):
             return
         with open(self.data_file, "r") as f:
@@ -26,6 +27,7 @@ class FreelanceManagementSystem:
                 self.invoices = [Invoice.from_dict(i, self.clients, self.projects) for i in data.get("invoices", [])]
 
     def save_data(self):
+        #prepare data dict
         data = {
             "clients": [c.to_dict() for c in self.clients],
             "projects": [p.to_dict() for p in self.projects],
@@ -35,6 +37,7 @@ class FreelanceManagementSystem:
                 json.dump(data, f, indent=4)
 
     def start(self):
+        #main menu loop
         while True:
             print("\n" + "="*40)
             print(" FREELANCE MANAGEMENT SYSTEM ")
@@ -76,6 +79,7 @@ class FreelanceManagementSystem:
             
             choice = input("Enter choice: ")
             if choice == '1':
+                #add new client
                 name = input("Enter client name: ")
                 contact = input("Enter contact info: ")
                 terms = input("Enter payment terms: ")
@@ -86,8 +90,9 @@ class FreelanceManagementSystem:
                 self.view_clients()
             elif choice == '3':
                 self.view_clients()
-                if not self.clients: continue   # if no existing clients
+                if not self.clients: continue   #if no clients
                 try:
+                    #update client info
                     idx = int(input("Enter client number to update: ")) - 1
                     if 0 <= idx < len(self.clients):
                         c = self.clients[idx]
@@ -102,12 +107,13 @@ class FreelanceManagementSystem:
                     print("Please enter a valid number.")
             elif choice == '4':
                 self.view_clients()
-                if not self.clients: continue   # if no existing clients
+                if not self.clients: continue   #if no clients
                 try:
+                    #delete client
                     idx = int(input("Enter client number to delete: ")) - 1
                     if 0 <= idx < len(self.clients):
                         client_to_delete = self.clients[idx]
-                        # Remove invoices associated with this client
+                        #remove client invoices
                         self.invoices = [inv for inv in self.invoices if inv.get_client() != client_to_delete]
                         del self.clients[idx]
                         print("Client and associated invoices deleted.")
@@ -121,7 +127,7 @@ class FreelanceManagementSystem:
                 print("Invalid choice.")
 
     def view_clients(self):
-        if not self.clients:   # if no existing clients   
+        if not self.clients:   #if no clients   
             print("No clients found.")
             return
         for i, c in enumerate(self.clients, 1):
@@ -140,6 +146,7 @@ class FreelanceManagementSystem:
             
             choice = input("Enter choice: ")
             if choice == '1':
+                #add new project
                 title = input("Enter project title: ")
                 deadline = input("Enter deadline (YYYY-MM-DD): ")
                 try:
@@ -158,6 +165,7 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue   
                 try:
+                    #update project info
                     idx = int(input("Enter project number to update: ")) - 1
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
@@ -180,10 +188,11 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue
                 try:
+                    #delete project
                     idx = int(input("Enter project number to delete: ")) - 1
                     if 0 <= idx < len(self.projects):
                         project_to_delete = self.projects[idx]
-                        # Remove invoices associated with this project
+                        #remove project invoices
                         self.invoices = [inv for inv in self.invoices if inv.get_project() != project_to_delete]
                         del self.projects[idx]
                         print("Project and associated invoices deleted.")
@@ -195,6 +204,7 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue
                 try:
+                    #log project details
                     idx = int(input("Enter project number to log details for: ")) - 1
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
@@ -235,6 +245,7 @@ class FreelanceManagementSystem:
 
             choice = input("Enter choice: ")
             if choice == '1':
+                #check requirements
                 if not self.clients or not self.projects:
                     print("You need at least one client and one project to create an invoice.")
                     continue
@@ -336,7 +347,7 @@ class FreelanceManagementSystem:
             print(inv.display_info())
             print("-------------------")
 
-    # --- Financial Reports ---
+    #financial reports
     def financial_reports(self):
         print("\n--- Financial Reports ---")
         if not self.projects:
@@ -361,12 +372,12 @@ class FreelanceManagementSystem:
 
         df = pd.DataFrame(data)
 
-        # Display the detailed report
+        #display report
         print("\nDetailed Project Report:")
         pd.set_option('display.float_format', '{:.2f}'.format)
         print(df.to_string())
 
-        # Calculate summary statistics
+        #calculate summary
         print("\n" + "-" * 30)
         print("OVERALL SUMMARY")
         total_gross = df["Gross Earnings"].sum()
@@ -381,7 +392,7 @@ class FreelanceManagementSystem:
         overall_margin = (total_net / total_gross * 100) if total_gross > 0 else 0
         print(f"Overall Profit Margin: {overall_margin:.2f}%")
 
-        # Additionally, provide summary statistics using pandas describe()
+        #provide summary stats
         print("\nSummary Statistics (mean, min, max):")
         stats_df = df[["Gross Earnings", "Estimated Tax", "Expenses", "Net Income", "Profit Margin (%)"]].describe()
         print(stats_df.loc[['mean', 'min', 'max']])

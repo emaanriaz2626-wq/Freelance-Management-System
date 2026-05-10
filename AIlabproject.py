@@ -59,9 +59,9 @@ class Project:
     def calculate_net_income(self, tax_rate=0.20):
         return self.calculate_gross_earnings() - self.calculate_estimated_tax(tax_rate) - self.expenses
 
-    def calculate_profit_margin(self, tax_rate=0.20):       # profit margin is the ratio of the net income to the gross earnings in percentage form.
+    def calculate_profit_margin(self, tax_rate=0.20):       #calculate margin
         gross = self.calculate_gross_earnings()
-        if gross == 0: return 0.0   # condition to prevent a zero division error.
+        if gross == 0: return 0.0   #prevent zero division
         return (self.calculate_net_income(tax_rate) / gross) * 100
 
     def to_dict(self):
@@ -135,6 +135,7 @@ class FreelanceManagementSystem:
         self.load_data()
 
     def load_data(self):
+        #check file exists
         if not os.path.exists(self.data_file):
             return
         with open(self.data_file, "r") as f:
@@ -144,6 +145,7 @@ class FreelanceManagementSystem:
                 self.invoices = [Invoice.from_dict(i, self.clients, self.projects) for i in data.get("invoices", [])]
 
     def save_data(self):
+        #prepare data dict
         data = {
             "clients": [c.to_dict() for c in self.clients],
             "projects": [p.to_dict() for p in self.projects],
@@ -153,6 +155,7 @@ class FreelanceManagementSystem:
                 json.dump(data, f, indent=4)
 
     def start(self):
+        #main menu loop
         while True:
             print("\n" + "="*40)
             print(" FREELANCE MANAGEMENT SYSTEM ")
@@ -194,6 +197,7 @@ class FreelanceManagementSystem:
             
             choice = input("Enter choice: ")
             if choice == '1':
+                #add new client
                 name = input("Enter client name: ")
                 contact = input("Enter contact info: ")
                 terms = input("Enter payment terms: ")
@@ -203,8 +207,9 @@ class FreelanceManagementSystem:
                 self.view_clients()
             elif choice == '3':
                 self.view_clients()
-                if not self.clients: continue   # if no existing clients
+                if not self.clients: continue   #if no clients
                 try:
+                    #update client info
                     idx = int(input("Enter client number to update: ")) - 1
                     if 0 <= idx < len(self.clients):
                         c = self.clients[idx]
@@ -218,8 +223,9 @@ class FreelanceManagementSystem:
                     print("Please enter a valid number.")
             elif choice == '4':
                 self.view_clients()
-                if not self.clients: continue   # if no existing clients
+                if not self.clients: continue   #if no clients
                 try:
+                    #delete client
                     idx = int(input("Enter client number to delete: ")) - 1
                     if 0 <= idx < len(self.clients):
                         del self.clients[idx]
@@ -234,7 +240,7 @@ class FreelanceManagementSystem:
                 print("Invalid choice.")
 
     def view_clients(self):
-        if not self.clients:   # if no existing clients   
+        if not self.clients:   #if no clients   
             print("No clients found.")
             return
         for i, c in enumerate(self.clients, 1):
@@ -253,6 +259,7 @@ class FreelanceManagementSystem:
             
             choice = input("Enter choice: ")
             if choice == '1':
+                #add new project
                 title = input("Enter project title: ")
                 deadline = input("Enter deadline (YYYY-MM-DD): ")
                 try:
@@ -267,6 +274,7 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue   
                 try:
+                    #update project info
                     idx = int(input("Enter project number to update: ")) - 1
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
@@ -284,6 +292,7 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue
                 try:
+                    #delete project
                     idx = int(input("Enter project number to delete: ")) - 1
                     if 0 <= idx < len(self.projects):
                         del self.projects[idx]
@@ -296,6 +305,7 @@ class FreelanceManagementSystem:
                 self.view_projects()
                 if not self.projects: continue
                 try:
+                    #log project details
                     idx = int(input("Enter project number to log details for: ")) - 1
                     if 0 <= idx < len(self.projects):
                         p = self.projects[idx]
@@ -331,6 +341,7 @@ class FreelanceManagementSystem:
 
             choice = input("Enter choice: ")
             if choice == '1':
+                #check requirements
                 if not self.clients or not self.projects:
                     print("You need at least one client and one project to create an invoice.")
                     continue
@@ -406,7 +417,7 @@ class FreelanceManagementSystem:
             print(inv.display_info())
             print("-------------------")
 
-    # --- Financial Reports ---
+    #financial reports
     def financial_reports(self):
         print("\n--- Financial Reports ---")
         if not self.projects:
@@ -431,12 +442,12 @@ class FreelanceManagementSystem:
 
         df = pd.DataFrame(data)
 
-        # Display the detailed report
+        #display report
         print("\nDetailed Project Report:")
         pd.set_option('display.float_format', '{:.2f}'.format)
         print(df.to_string())
 
-        # Calculate summary statistics
+        #calculate summary
         print("\n" + "-" * 30)
         print("OVERALL SUMMARY")
         total_gross = df["Gross Earnings"].sum()
@@ -451,7 +462,7 @@ class FreelanceManagementSystem:
         overall_margin = (total_net / total_gross * 100) if total_gross > 0 else 0
         print(f"Overall Profit Margin: {overall_margin:.2f}%")
 
-        # Additionally, provide summary statistics using pandas describe()
+        #provide summary stats
         print("\nSummary Statistics (mean, min, max):")
         stats_df = df[["Gross Earnings", "Estimated Tax", "Expenses", "Net Income", "Profit Margin (%)"]].describe()
         print(stats_df.loc[['mean', 'min', 'max']])
@@ -462,7 +473,7 @@ class FreelanceManagementSystem:
             print("No projects to plot.")
             return
             
-        # Count the occurrences of each project status
+        #count occurrences
         status_counts = {}
         for p in self.projects:
             status = p.status
@@ -474,7 +485,7 @@ class FreelanceManagementSystem:
         labels = list(status_counts.keys())
         sizes = list(status_counts.values())
         
-        # Generate the pie chart using matplotlib
+        #generate pie chart
         plt.figure(figsize=(8, 6))
         plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.Paired.colors)
         plt.title('Project Status Distribution')
@@ -485,33 +496,32 @@ class FreelanceManagementSystem:
             print("No projects to plot.")
             return
 
-        # Prepare the data
+        #prepare data
         titles = [p.get_title() for p in self.projects]
         gross_earnings = [p.calculate_gross_earnings() for p in self.projects]
         expenses = [p.expenses for p in self.projects]
         net_incomes = [p.calculate_net_income() for p in self.projects]
 
-        # Set up the bar locations on the X-axis
-        x = np.arange(len(titles))  # [0, 1, 2, ...] based on number of projects
-        width = 0.25  # The width of each individual bar
+        #set bar locations
+        x = np.arange(len(titles))  
+        width = 0.25  
 
         fig, ax = plt.subplots(figsize=(10, 6))
         
-        # Plotting the three groups of bars. We shift the X coordinates slightly 
-        # so they sit side-by-side instead of overlapping.
+        #plot bars side by side
         ax.bar(x - width, gross_earnings, width, label='Gross Earnings', color='skyblue')
         ax.bar(x, expenses, width, label='Expenses', color='salmon')
         ax.bar(x + width, net_incomes, width, label='Net Income', color='lightgreen')
 
-        # Add labels, title, and adjust X-axis ticks to show project names
+        #add labels and title
         ax.set_ylabel('Amount ($)')
         ax.set_title('Project Financial Breakdown')
         ax.set_xticks(x)
-        # Rotate long project titles by 45 degrees so they don't overlap
+        #rotate titles
         ax.set_xticklabels(titles, rotation=45, ha="right")  
         ax.legend()
 
-        # tight_layout prevents the rotated labels from bg cut off at the bottom of the window
+        #prevent label cutoff
         fig.tight_layout()
         plt.show()
 

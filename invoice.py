@@ -6,9 +6,11 @@ class Invoice:
         self._items = []
 
     def add_item(self, description, amount):
+        #add new item
         self._items.append({"description": description, "amount": amount})
         
     def clear_items(self):
+        #empty items list
         self._items = []
 
     def get_client(self): return self._client
@@ -18,6 +20,7 @@ class Invoice:
     def get_items(self): return self._items
 
     def get_totals(self):
+        #calculate total amount
         return sum(item["amount"] for item in self._items)
 
     def display_info(self):

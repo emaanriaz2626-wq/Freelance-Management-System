@@ -16,6 +16,7 @@ class Client:
         return f"Client Name: {self._name} | Contact: {self._contact} | Payment Terms: {self._payment_terms} | Currency: {self.currency}"
 
     def to_dict(self):
+        #convert to dict
         return {
             "name": self._name,
             "contact": self._contact,
@@ -25,4 +26,5 @@ class Client:
 
     @classmethod
     def from_dict(cls, data):
+        #create from dict
         return cls(data["name"], data["contact"], data["payment_terms"], data.get("currency", "USD"))
